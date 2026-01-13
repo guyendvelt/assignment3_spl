@@ -43,9 +43,7 @@ string StompProtocol::processInput(string commandLine) {
 
 
     }else if(command == "login"){
-        string hostPort, username, password;
-        commandLineStream >> hostPort >> username >> password;
-        return handleLogin(hostPort, username, password);
+       cout << "client already logged in" << endl;
 
     }else if(command == "logout"){
         handleLogout();

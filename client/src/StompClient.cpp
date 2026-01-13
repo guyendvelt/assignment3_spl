@@ -1,4 +1,12 @@
+#include <stdlib.h>
+#include "../include/ConnectionHandler.h"
+#include "../include/StompProtocol.h"
+#include <thread>
+#include <iostream>
+#include <vector>
+#include <sstream>
 
+using namespace std;
 
 void socketListener(ConnectionHandler* handler, StompProtocol* protocol, bool* shouldTerminate){
 	while(!(*shouldTerminate)){
