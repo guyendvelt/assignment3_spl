@@ -31,17 +31,18 @@ int main(int argc, char *argv[]) {
 		cout << "Please login (login {host:port} {username} {password})" << endl;
 		string line;
         getline(cin, line);
-
-		stringstream stringStream(line);
+		if(line.empty()) continue;
+		stringstream lineStream(line);
         string command;
-        stringStream >> command;
+        lineStream >> command;
 
+		//handle login
 		if(command == "login"){
 			string hostPort, username, password;
-			stringStream >> hostPort >> username >> password;
+			lineStream >> hostPort >> username >> password;
 
 			string host = hostPort.substr(0, hostPort.find(':'));
-			short port = stoi(hostPort.substr(hostPort.find(':') + 1));
+			int port = stoi(hostPort.substr(hostPort.find(':') + 1));
 			ConnectionHandler handler(host, port);
 			if(!handler.connect()){
 				cerr << "Cannot connect to " << host << ":" << port << endl;
@@ -61,6 +62,8 @@ int main(int argc, char *argv[]) {
 			if(answer.find("CONNECTED") != string::npos){
 				cout << "Login succesful" << endl;
 			}
+
+
 
 			StompProtocol protocol;
 			protocol.setUsername(username);
