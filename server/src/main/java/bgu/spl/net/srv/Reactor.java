@@ -126,7 +126,6 @@ public class Reactor<T> implements Server<T> {
             selectorTasks.remove().run();
         }
     }
-
     @Override
     public void close() throws IOException {
         selector.close();

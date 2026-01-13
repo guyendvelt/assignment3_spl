@@ -5,12 +5,16 @@ import java.util.Map;
 
 import bgu.spl.net.api.MessagingProtocol;
 import bgu.spl.net.api.StompMessagingProtocol;
+import bgu.spl.net.impl.data.Database;
+import bgu.spl.net.impl.data.LoginStatus;
 import bgu.spl.net.srv.Connections;
 
 public class StompMessagingProtocolImpl implements StompMessagingProtocol<String>{
     int connectionId;
     boolean shouldTerminate = false;
     Connections<String> connections;
+    boolean isLoggedIn = false;
+    String username;
 
     @Override
     public void start(int connectionId, Connections<String> connections) {
@@ -31,6 +35,10 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<String
             i++;
         }
             i++;
+            //assert user is connected 
+            if(!command.equals("CONNECT") && !isLoggedIn){
+                sendError("Unauthorized", "You must log in first", null);
+            }
           switch (command) {
             case "SEND":
                  while(i<lines.length){
@@ -73,9 +81,42 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<String
         
     }
 
-    private void handleConnect(Map<String, String> headers){
-        //TODO: IMPLEMENT
+private void handleConnect(Map<String, String> headers) {
+    String login = headers.get("login");
+    String passcode = headers.get("passcode");
+    String acceptVersion = headers.get("accept-version");
+    String host = headers.get("host");
+
+    if (acceptVersion == null || host == null || login == null || passcode == null) {
+        sendError("MALFORMED_FRAME", "Missing mandatory headers for CONNECT", headers);
+       
+    } else {
+            LoginStatus status = Database.getInstance().login(connectionId, login, passcode);
+           
+            switch (status) {
+                case WRONG_PASSWORD:
+                    sendError("Login failed", "wrong password", headers);
+                    break;
+                case ALREADY_LOGGED_IN:
+                    sendError("Login failed", "user already logged in", headers);
+                    break;
+                case CLIENT_ALREADY_CONNECTED:
+                    sendError("Login failed", "client already connected", headers);
+                    break;
+                default:
+                    isLoggedIn = true;
+                    username = login;
+                     String response = "CONNECTED\n" +
+                          "version:1.2\n" +
+                          "\n" + 
+                          "\u0000";
+                    connections.send(connectionId, response);
+                    break;
+            }
+
     }
+
+}
 
     private void handleSubscribe(Map<String, String> headers){
         String topic = headers.get("destination");
