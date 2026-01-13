@@ -53,7 +53,7 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<String
                 handleDisconnect(headersMap);
                 break;
           }
-
+               
         }
 
     @Override
@@ -74,7 +74,7 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<String
     }
 
     private void handleConnect(Map<String, String> headers){
-        //////
+        //TODO: IMPLEMENT
     }
 
     private void handleSubscribe(Map<String, String> headers){
