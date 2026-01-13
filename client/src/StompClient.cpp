@@ -1,23 +1,4 @@
-#include <stdlib.h>
-#include "../include/ConnectionHandler.h"
-#include "../include/StompProtocol.h"
-#include <thread>
-#include <iostream>
-#include <vector>
-#include <sstream>
 
-using namespace std;
-
-StompProtocol::StompProtocol() :
-username(""),
-subscriptionIdCounter(0),
-receiptIdCounter(0),
-activeSubscriptions(),
-receiptActions(),
-gameEvents(),
-shouldTerminate(false){}
-
-string StompProtocol
 
 void socketListener(ConnectionHandler* handler, StompProtocol* protocol, bool* shouldTerminate){
 	while(!(*shouldTerminate)){

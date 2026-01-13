@@ -32,7 +32,6 @@ public:
         return username;
     }
 private:
-    string handleLogin(string hostPort, string user, string password);
     string handleJoin(string gameName);
     string handleExit(string gameName);
     string handleReport(string filePath);

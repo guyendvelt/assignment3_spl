@@ -16,6 +16,36 @@ Event::Event(std::string team_a_name, std::string team_b_name, std::string name,
       team_b_updates(team_b_updates), description(discription)
 {
 }
+Event::Event(const std::string &frame_body) : team_a_name(""), team_b_name("") ,name(""), time(0), game_updates(), team_a_updates(), team_b_updates(), description("") {
+    std::stringstream bodyStream(frame_body);
+    std::string line;
+    std::string current_section = "";
+
+    while (std::getline(bodyStream, line)) {
+        if (line.find("team a:") == 0 && current_section == "") team_a_name = line.substr(7);
+        else if (line.find("team b:") == 0 && current_section == "") team_b_name = line.substr(7);
+        else if (line.find("event name:") == 0) name = line.substr(11); 
+        else if (line.find("time:") == 0) try { time = std::stoi(line.substr(5)); } catch (...) {}
+        else if (line == "general game updates:") current_section = "general";
+        else if (line == "team a updates:") current_section = "team_a";
+        else if (line == "team b updates:") current_section = "team_b";
+        else if (line == "description:") current_section = "description";
+        else if (!line.empty()) {
+            if (current_section == "description") {
+                description += line + "\n";
+            } else {
+                size_t colon = line.find(':');
+                if (colon != std::string::npos) {
+                    std::string key = line.substr(0, colon);
+                    std::string val = line.substr(colon + 1);
+                    if (current_section == "general") game_updates[key] = val;
+                    else if (current_section == "team_a") team_a_updates[key] = val;
+                    else if (current_section == "team_b") team_b_updates[key] = val;
+                }
+            }
+        }
+    }
+}
 
 Event::~Event()
 {

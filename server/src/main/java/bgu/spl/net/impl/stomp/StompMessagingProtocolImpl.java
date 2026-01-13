@@ -38,31 +38,35 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<String
             //assert user is connected 
             if(!command.equals("CONNECT") && !isLoggedIn){
                 sendError("Unauthorized", "You must log in first", null);
-            }
-          switch (command) {
-            case "SEND":
-                 while(i<lines.length){
-                    body = body + "\n" + lines[i];
-                    i++;
-                 }
-                    handleSend(headersMap, body);
-                    break;
-                
-            case "CONNECT":
-                handleConnect(headersMap);
-                break;
-            case "SUBSCRIBE":
-                handleSubscribe(headersMap);
-                break;
-            case "UNSUBSCRIBE":
-                handleUnSubscribe(headersMap);
-                break;
-            case "DISCONNECT":
-                handleDisconnect(headersMap);
-                break;
-          }
+            } else {
+                 switch (command) {
+                    case "SEND":
+                        body = lines[i];
+                        i++;
+                        while(i<lines.length){
+                            body = body + "\n" + lines[i];
+                            i++;
+                        }
+                            handleSend(headersMap, body);
+                            break;
+                        
+                    case "CONNECT":
+                        handleConnect(headersMap);
+                        break;
+                    case "SUBSCRIBE":
+                        handleSubscribe(headersMap);
+                        break;
+                    case "UNSUBSCRIBE":
+                        handleUnSubscribe(headersMap);
+                        break;
+                    case "DISCONNECT":
+                        handleDisconnect(headersMap);
+                        break;
+                }
                
         }
+            }
+         
 
     @Override
     public boolean shouldTerminate() {
