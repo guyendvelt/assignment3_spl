@@ -44,9 +44,9 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<String
                  while(i<lines.length){
                     body = body + "\n" + lines[i];
                     i++;
+                 }
                     handleSend(headersMap, body);
                     break;
-                }
                 
             case "CONNECT":
                 handleConnect(headersMap);

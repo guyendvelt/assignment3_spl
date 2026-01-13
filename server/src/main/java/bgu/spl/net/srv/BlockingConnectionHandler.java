@@ -22,6 +22,11 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
         this.sock = sock;
         this.encdec = reader;
         this.protocol = protocol;
+
+        ConnectionImpl<T> connections = ConnectionImpl.getInstance();
+        int connectionId = connections.getUniqueId();
+        connections.connect(connectionId, this);
+        protocol.start(connectionId, connections);
     }
 
     @Override
@@ -54,5 +59,15 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
     @Override
     public void send(T msg) {
         //IMPLEMENT IF NEEDED
+        try {
+            if(msg!=null){
+                byte[] encodedMsg = encdec.encode(msg);
+                out.write(encodedMsg);
+                out.flush();
+            }
+            
+        }catch (IOException e) {
+         e.printStackTrace();
+    }
     }
 }
