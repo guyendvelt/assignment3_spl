@@ -1,7 +1,6 @@
 package bgu.spl.net.srv;
 
 import bgu.spl.net.api.MessageEncoderDecoder;
-import bgu.spl.net.api.MessagingProtocol;
 import bgu.spl.net.api.StompMessagingProtocol;
 
 import java.io.IOException;
@@ -10,7 +9,6 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class NonBlockingConnectionHandler<T> implements ConnectionHandler<T> {
 
@@ -21,23 +19,23 @@ public class NonBlockingConnectionHandler<T> implements ConnectionHandler<T> {
     private final MessageEncoderDecoder<T> encdec;
     private final Queue<ByteBuffer> writeQueue = new ConcurrentLinkedQueue<>();
     private final SocketChannel chan;
-    private final Reactor reactor;
+    private final Reactor<T> reactor;
 
     public NonBlockingConnectionHandler(
             MessageEncoderDecoder<T> reader,
             StompMessagingProtocol<T> protocol,
             SocketChannel chan,
-            Reactor reactor) {
+            Reactor<T> reactor) {
         this.chan = chan;
         this.encdec = reader;
         this.protocol = protocol;
         this.reactor = reactor;
 
         if(protocol instanceof StompMessagingProtocol){
-            ConnectionImpl connections = ConnectionImpl.getInstance();
+            ConnectionImpl<T> connections = ConnectionImpl.getInstance();
            int connectionId = connections.getUniqueId();
             connections.connect(connectionId, this);
-            ((StompMessagingProtocol) protocol).start(connectionId, connections);
+            ((StompMessagingProtocol<T>) protocol).start(connectionId, connections);
         }
     }
 

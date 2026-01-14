@@ -27,7 +27,7 @@ public class StompEncDec implements MessageEncoderDecoder<String> {
 
     @Override
     public byte[] encode(String message) {
-        return (message + "\u0000").getBytes();
+        return message.getBytes();
        
     }
 

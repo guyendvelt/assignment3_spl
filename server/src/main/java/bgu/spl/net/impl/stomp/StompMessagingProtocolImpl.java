@@ -1,11 +1,5 @@
 package bgu.spl.net.impl.stomp;
-
-import java.util.HashMap;
 import java.util.Map;
-
-import javax.swing.DefaultBoundedRangeModel;
-
-import bgu.spl.net.api.MessagingProtocol;
 import bgu.spl.net.api.StompMessagingProtocol;
 import bgu.spl.net.impl.data.Database;
 import bgu.spl.net.impl.data.LoginStatus;
@@ -31,7 +25,7 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<String
             String command = request.getCommand();
                  switch (command) {
                     case "SEND":
-                        return handleSend(request);
+                        handleSend(request);
                         break;
                         
                     case "CONNECT":
@@ -47,12 +41,12 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<String
                         handleDisconnect(request);
                         break;
                     default:
-                    sendError("Illegal command", "command " + command + "is not supported in STOMP");
+                    sendError("Illegal command", "command " + command + "is not supported in STOMP", request);
                 }
                     
                
         }
-            }
+            
          
 
     @Override
@@ -66,42 +60,41 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<String
             SubscriptionManager.getInstance().broadcast(request, connections);
             handleReceipt(request);  
         } else {
-            sendError("TOPIC ERROR","topic should not be null");
+            sendError("TOPIC ERROR","topic should not be null", request);
         }
 
         
     }
 
-private void handleConnect(Map<String, String> headers) {
-    String login = headers.get("login");
-    String passcode = headers.get("passcode");
-    String acceptVersion = headers.get("accept-version");
-    String host = headers.get("host");
+private void handleConnect(Frame request) {
+    
+    String login = request.getHeader("login");
+    String passcode = request.getHeader("passcode");
+    String acceptVersion = request.getHeader("accept-version");
+    String host = request.getHeader("host");
 
     if (acceptVersion == null || host == null || login == null || passcode == null) {
-        sendError("MALFORMED_FRAME", "Missing mandatory headers for CONNECT", headers);
+        sendError("MALFORMED_FRAME", "Missing mandatory headers for CONNECT", request);
        
     } else {
             LoginStatus status = Database.getInstance().login(connectionId, login, passcode);
            
             switch (status) {
                 case WRONG_PASSWORD:
-                    sendError("Login failed", "wrong password", headers);
+                    sendError("Login failed", "wrong password", request);
                     break;
                 case ALREADY_LOGGED_IN:
-                    sendError("Login failed", "user already logged in", headers);
+                    sendError("Login failed", "user already logged in", request);
                     break;
                 case CLIENT_ALREADY_CONNECTED:
-                    sendError("Login failed", "client already connected", headers);
+                    sendError("Login failed", "client already connected", request);
                     break;
                 default:
                     isLoggedIn = true;
                     username = login;
-                     String response = "CONNECTED\n" +
-                          "version:1.2\n" +
-                          "\n" + 
-                          "\u0000";
-                    connections.send(connectionId, response);
+                    Frame response = new Frame("CONNECTED");
+                    response.addHeader("version", "1.2");
+                    connections.send(connectionId, response.toString());
                     break;
             }
 
@@ -109,31 +102,31 @@ private void handleConnect(Map<String, String> headers) {
 
 }
 
-    private void handleSubscribe(Map<String, String> headers){
-        String topic = headers.get("destination");
-        String subId = headers.get("subscription");
+    private void handleSubscribe(Frame request){
+        String topic = request.getHeader("destination");
+        String subId = request.getHeader("subscription");
         if(topic != null && subId != null){
             SubscriptionManager.getInstance().subscribe(topic, connectionId, subId);
-            handleReceipt(headers);
+            handleReceipt(request);
         } else {
-            sendError("SUBSCRIBE ERROR", "topic and subId should not be null", headers);
+            sendError("SUBSCRIBE ERROR", "topic and subId should not be null", request);
         }
         
     }
 
-    private void handleUnSubscribe(Map<String, String> headers){
-        String subId = headers.get("subscription");
+    private void handleUnSubscribe(Frame request){
+        String subId = request.getHeader("subscription");
         if(subId != null) {
-            SubscriptionManager.getInstance().unsubscribe(headers.get("subscription"), connectionId);
-            handleReceipt(headers);
+            SubscriptionManager.getInstance().unsubscribe(request.getHeader("subscription"), connectionId);
+            handleReceipt(request);
         } else {
-            sendError("UNSUBSCRIBE ERROR", "subID should not be null", headers);
+            sendError("UNSUBSCRIBE ERROR", "subID should not be null", request);
         }
         
     }
 
-    private void handleDisconnect(Map<String, String> headers){
-        handleReceipt(headers);
+    private void handleDisconnect(Frame request){
+        handleReceipt(request);
         SubscriptionManager.getInstance().clearConnection(connectionId);
         shouldTerminate = true;
         connections.disconnect(connectionId);
@@ -161,11 +154,9 @@ private void handleConnect(Map<String, String> headers) {
     private void handleReceipt(Frame request) {
         String receiptId = request.getHeader("receipt");
         if (receiptId != null) {
-            String response = "RECEIPT\n" +
-                                "receipt-id:" + receiptId + "\n\n" +
-                                "\u0000";
-                                
-            connections.send(connectionId, response);
+            Frame response = new Frame("RECEIPT");
+            response.addHeader("receipt-id", receiptId);
+            connections.send(connectionId, response.toString());
         }
 }
 
