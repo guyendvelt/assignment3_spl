@@ -16,10 +16,13 @@ private:
     string username;
     int subscriptionIdCounter;
     int receiptIdCounter;
+    //
     map<string,int> activeSubscriptions;
     map<int, string> receiptActions;
+    //game -> <user -> events>
     map<string, map<string, vector<Event>>> gameEvents;
     bool shouldTerminate;
+    bool isLoggedIn;
 
 public:
     StompProtocol();
@@ -38,4 +41,5 @@ private:
     string handleLogout();
     void handleSummary(string gameName, string user, string filePath);
     void parseFrame(string& frame, map<string, string> headers, string& body);
+    string getUserName(const string& body);
     };

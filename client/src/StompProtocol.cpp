@@ -4,6 +4,7 @@
 #include <fstream>
 #include <sstream>
 #include <algorithm>
+#include "../include/Frame.h";
 
 using namespace std;
 
@@ -14,7 +15,42 @@ receiptIdCounter(0),
 activeSubscriptions(),
 receiptActions(),
 gameEvents(),
-shouldTerminate(false){}
+shouldTerminate(false),
+isLoggedIn(false){}
+
+bool StompProtocol::processServerResponse(string response){
+    Frame frame = Frame::parse(response);
+    string command = frame.getCommand();
+    if(command == "CONNECTED"){
+        cout << "Login successful" << endl;
+         isLoggedIn = true;
+         return true;
+    } else if(command == "MESSAGE"){
+        string gameName = frame.getHeader("destination");
+        string body = frame.getBody();
+        Event event(body);
+        string userName = getUserName(body);
+        gameEvents[gameName][userName].push_back(event);
+        cout << "Received message from " << frame.getHeader("destination") << ":\n" << body << endl;
+        return true;
+    } else if(command == "RECEIPT"){
+        string receiptAction = receiptActions.at(stoi(frame.getHeader("receipt-id")));
+        cout << receiptAction << endl;
+        return true;
+    } else if(command == "ERROR"){
+        string msg = frame.getHeader("message");
+        string body = frame.getBody();
+        cout << "ERROR message: " << msg << "\n" << "ERROR description: " << body << endl;
+        isLoggedIn = false;
+        shouldTerminate = true;
+        return false;
+    } else {
+        cout << "Warning: Received unknown command: " << command << endl;
+        return true;
+    }
+    
+
+}
 
 string StompProtocol::processInput(string commandLine) {
     stringstream commandLineStream(commandLine);
@@ -59,11 +95,11 @@ string StompProtocol::handleJoin(string gameName){
     receiptIdCounter++;
     activeSubscriptions[gameName] = subscriptionIdCounter;
     receiptActions[receiptIdCounter] = "Joined channel " + gameName;
-    string response = "SUBSCRIBE\n"
-                      "destination: " + gameName + "\n" +
-                      "id: " + to_string(subscriptionIdCounter) + "\n" +
-                      "receipt: " + to_string(receiptIdCounter) + "\n\n";
-    return response;
+    Frame response("SUBSCRIBE");
+    response.addHeader("destination", gameName);
+    response.addHeader("id", to_string(subscriptionIdCounter));
+    response.addHeader("receipt", to_string(receiptIdCounter));
+    return response.toString();
 }
 
 string StompProtocol::handleExit(string gameName){
@@ -75,10 +111,10 @@ receiptIdCounter++;
 int subscriptionId = activeSubscriptions[gameName];
 activeSubscriptions.erase(gameName);
 receiptActions[receiptIdCounter] = "Exited channel " + gameName;
-string response = "UNSUBSCRIBE\n"
-                  "id: " + to_string(subscriptionId) + "\n" +
-                  "receipt: " + to_string(receiptIdCounter) + "\n\n";
-return response;
+Frame response("UNSUBSCRIBE");
+response.addHeader("id", to_string(subscriptionId));
+response.addHeader("receipt", to_string(receiptIdCounter));
+return response.toString();
 }
 
 string StompProtocol::handleReport(string filePath){
@@ -119,13 +155,11 @@ string StompProtocol::handleReport(string filePath){
         }
 
         body += "description:\n" + event.get_discription() + "\n";
+        Frame response("SEND");
+        response.addHeader("destination", gameName);
+        response.setBody(body);
 
-        string frame = "SEND\n"
-                       "destination:/" + gameName + "\n"
-                       "\n" + 
-                       body + "\0";
-        
-        frames += frame;
+        frames += response.toString();
         gameEvents[gameName][username].push_back(event);
 
     }
@@ -192,12 +226,20 @@ void StompProtocol::handleSummary(string gameName, string userName, string fileP
     string StompProtocol::handleLogout(){
         receiptIdCounter++;
         receiptActions[receiptIdCounter] = "Disconnecting...";
-        string response = "DISCONNECT\n"
-                          "receipt:" +to_string(receiptIdCounter) + "\n\n";
-        return response;
+        Frame response("DISCONNECT");
+        response.addHeader("receipt", to_string(receiptIdCounter);
+        return response.toString();
     }
 
-
+    string StompProtocol::getUserName(const string& body){
+        stringstream bodyStream(body);
+        string line;
+        if(getline(bodyStream, line)){
+            if(line.find("user:") == 0){
+                return line.substr(6);
+            }
+        }
+    }
 
 
 

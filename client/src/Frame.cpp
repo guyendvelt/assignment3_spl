@@ -39,7 +39,7 @@ string Frame::toString(){
     if(!body.empty()){
         stringFrame << body;
     }
-    stringFrame << "\0";
+    // stringFrame << "\0";
     return stringFrame.str();
 }
 

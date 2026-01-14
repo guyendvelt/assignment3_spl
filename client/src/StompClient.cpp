@@ -5,10 +5,13 @@
 #include <iostream>
 #include <vector>
 #include <sstream>
+#include "../include/Frame.h";
 
 using namespace std;
 
 void socketListener(ConnectionHandler* handler, StompProtocol* protocol, bool* shouldTerminate){
+
+
 	while(!(*shouldTerminate)){
 		string answer;
 		if(!handler->getFrameAscii(answer, '\0')){
@@ -24,6 +27,10 @@ void socketListener(ConnectionHandler* handler, StompProtocol* protocol, bool* s
 
 	}
 }
+
+
+
+
 
 int main(int argc, char *argv[]) {
 	// TODO: implement the STOMP client
@@ -48,9 +55,13 @@ int main(int argc, char *argv[]) {
 				cerr << "Cannot connect to " << host << ":" << port << endl;
 				continue;
 			}
-
-			string connectFrame = "CONNECT\naccept-version:1.2\nhost:stomp.cs.bgu.ac.il\nlogin:" + username + "\npasscode:" + password + "\n\n\0";
-			if (!handler.sendFrameAscii(connectFrame.substr(0, connectFrame.length()-1), '\0')) { 
+			Frame connectFrame("CONNECT");
+			connectFrame.addHeader("accept-version", "1.2");
+			connectFrame.addHeader("host", "stomp.cs.bgu.ac.il");
+			connectFrame.addHeader("login", username);
+			connectFrame.addHeader("passcode", password);
+			
+			if (!handler.sendFrameAscii(connectFrame.toString(), '\0'); { 
                 cerr << "Failed to send CONNECT frame" << endl;
                 continue;
             }
