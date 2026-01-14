@@ -90,6 +90,11 @@ string StompProtocol::processInput(string commandLine) {
 }
 
 string StompProtocol::handleJoin(string gameName){
+    if (activeSubscriptions.count(gameName) > 0) {
+            cout << "You are already subscribed to " << gameName << endl;
+            return "";
+        }
+
     subscriptionIdCounter++;
     receiptIdCounter++;
     activeSubscriptions[gameName] = subscriptionIdCounter;

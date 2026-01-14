@@ -48,10 +48,17 @@ Frame Frame::parse(const string& msg){
     if(!getline(msgStream, command)){
         return Frame("ERROR");
     }
+    if(!command.empty() && command.back() == '\r'){
+        command.pop_back();
+    }
+
     //create new frame
     Frame frame(command);
     //parse headers
     while(getline(msgStream,line) && !line.empty()){
+        if(!line.empty() && line.back() == '\r'){
+            line.pop_back();
+        }
         size_t colon = line.find(":");
         if(colon != string::npos){
             string key = line.substr(0, colon);
@@ -61,7 +68,10 @@ Frame Frame::parse(const string& msg){
     }
      // parse body
      string body;
-     getline(msgStream, body, '\0');
+     char c;
+    while(msgStream.get(c)){
+        body += c;
+    }
      frame.setBody(body);
      return frame;
 }

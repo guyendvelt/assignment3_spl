@@ -34,12 +34,13 @@ public void setBody(String body){
 
 public static Frame parse(String msg){
     String lines[] = msg.split("\n");
-    String command = lines[0];
+    String command = lines[0].trim();
     Frame frame = new Frame(command);
     int i = 1;
     while(i < lines.length && !lines[i].isEmpty()){
-        String[] lineParts = lines[i].split(":");
-        frame.addHeader(lineParts[0], lineParts[1]);
+        String line = lines[i].trim();
+        String[] lineParts = line.split(":", 2);
+        frame.addHeader(lineParts[0].trim(), lineParts[1].trim());
         i++;
     }
     StringBuilder buildBody = new StringBuilder();
@@ -63,10 +64,10 @@ public String toString(){
               .append("\n");
         }
     }
+    sb.append("\n");
     if(body != null && !body.isEmpty()){
         sb.append(body);
     }
-    sb.append("\n");
     sb.append('\u0000');
     return sb.toString();
 

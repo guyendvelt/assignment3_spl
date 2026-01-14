@@ -17,11 +17,13 @@ void socketListener(){
 	while(isLoggedIn){
 		string answer;
 		if(!connectionHandler->getFrameAscii(answer, '\0')){
+			cout << "[DEBUG] Disconnected: ConnectionHandler returned false (Socket closed?)" << endl;
 			cout << "Disconnected. Exiting...\n" << endl;
 			isLoggedIn = false;
 		} else {
 			bool shouldKeepRunning = protocol->processServerResponse(answer);
 			if(!shouldKeepRunning){
+				cout << "[DEBUG] Disconnected: Protocol decided to stop (Logout/Error)" << endl;
 				isLoggedIn = false;
 				connectionHandler->close();
 			}

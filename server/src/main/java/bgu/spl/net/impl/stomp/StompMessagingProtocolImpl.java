@@ -104,9 +104,10 @@ private void handleConnect(Frame request) {
 
     private void handleSubscribe(Frame request){
         String topic = request.getHeader("destination");
-        String subId = request.getHeader("subscription");
+        String subId = request.getHeader("id");
+        System.out.println(topic + " " + subId);
         if(topic != null && subId != null){
-            SubscriptionManager.getInstance().subscribe(topic, connectionId, subId);
+           SubscriptionManager.getInstance().subscribe(topic, connectionId, subId);
             handleReceipt(request);
         } else {
             sendError("SUBSCRIBE ERROR", "topic and subId should not be null", request);
