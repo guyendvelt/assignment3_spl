@@ -58,7 +58,8 @@ public void unsubscribe(String subscriptionId, int connectionId){
     }
 }
 
-public void broadcast(String topic, String message, Connections<String> connections){
+public void broadcast(Frame request, Connections<String> connections){
+    String topic = request.getHeader("destination");
     ConcurrentLinkedQueue<Subscription> subscriptions = channelMap.get(topic);
     if(subscriptions != null){
         for(Subscription sub : subscriptions){
@@ -66,7 +67,7 @@ public void broadcast(String topic, String message, Connections<String> connecti
                                    "subscription:" + sub.getSubscriptionId() + "\n" +
                                    "message-id:" + globalMessageCounter.incrementAndGet() + "\n" +
                                    "destination:" + sub.getTopic() + "\n\n" +
-                                   message + "\u0000";
+                                   request.getBody() + "\u0000";
             connections.send(sub.getConnectionId(), returnMessage);
         }
     }

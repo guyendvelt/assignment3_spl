@@ -3,6 +3,8 @@ package bgu.spl.net.impl.stomp;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.swing.DefaultBoundedRangeModel;
+
 import bgu.spl.net.api.MessagingProtocol;
 import bgu.spl.net.api.StompMessagingProtocol;
 import bgu.spl.net.impl.data.Database;
@@ -24,45 +26,30 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<String
 
     @Override
     public void process(String message) {
-        String lines[] = message.split("\n");
-        String command = lines[0];
-        Map<String, String> headersMap = new HashMap<>(); 
-        String body = "";
-        int i = 1;
-        while(i < lines.length && !lines[i].isEmpty()){
-            String[] lineParts = lines[i].split(":");
-            headersMap.put(lineParts[0], lineParts[1]);
-            i++;
-        }
-            i++;
-            //assert user is connected 
-            if(!command.equals("CONNECT") && !isLoggedIn){
-                sendError("Unauthorized", "You must log in first", null);
-            } else {
+
+            Frame request = Frame.parse(message);
+            String command = request.getCommand();
                  switch (command) {
                     case "SEND":
-                        body = lines[i];
-                        i++;
-                        while(i<lines.length){
-                            body = body + "\n" + lines[i];
-                            i++;
-                        }
-                            handleSend(headersMap, body);
-                            break;
+                        return handleSend(request);
+                        break;
                         
                     case "CONNECT":
-                        handleConnect(headersMap);
+                        handleConnect(request);
                         break;
                     case "SUBSCRIBE":
-                        handleSubscribe(headersMap);
+                        handleSubscribe(request);
                         break;
                     case "UNSUBSCRIBE":
-                        handleUnSubscribe(headersMap);
+                        handleUnSubscribe(request);
                         break;
                     case "DISCONNECT":
-                        handleDisconnect(headersMap);
+                        handleDisconnect(request);
                         break;
+                    default:
+                    sendError("Illegal command", "command " + command + "is not supported in STOMP");
                 }
+                    
                
         }
             }
@@ -73,13 +60,13 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<String
         return shouldTerminate;
     }
 
-    private void handleSend(Map<String, String> headers, String body){
-        String topic = headers.get("destination");
+    private void handleSend(Frame request){
+        String topic = request.getHeader("destination");
         if(topic != null){
-            SubscriptionManager.getInstance().broadcast(topic, body, connections);
-            handleReceipt(headers);  
+            SubscriptionManager.getInstance().broadcast(request, connections);
+            handleReceipt(request);  
         } else {
-            sendError("TOPIC ERROR","topic should not be null", headers);
+            sendError("TOPIC ERROR","topic should not be null");
         }
 
         
@@ -153,8 +140,9 @@ private void handleConnect(Map<String, String> headers) {
     }
 
 
-    private void sendError(String message, String description, Map<String, String> headers){
+    private void sendError(String message, String description, Frame request){
         String response = "ERROR\n";
+        Map<String,String> headers = request.getHeaders();
         if (headers != null && headers.containsKey("receipt")) {
         response += "receipt-id:" + headers.get("receipt") + "\n";
     }
@@ -170,8 +158,8 @@ private void handleConnect(Map<String, String> headers) {
         connections.disconnect(connectionId);
     }
 
-    private void handleReceipt(Map<String, String> headers) {
-        String receiptId = headers.get("receipt");
+    private void handleReceipt(Frame request) {
+        String receiptId = request.getHeader("receipt");
         if (receiptId != null) {
             String response = "RECEIPT\n" +
                                 "receipt-id:" + receiptId + "\n\n" +
