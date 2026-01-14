@@ -63,6 +63,9 @@ public String toString(){
               .append("\n");
         }
     }
+    if(body != null && !body.isEmpty()){
+        sb.append(body);
+    }
     sb.append("\n");
     sb.append('\u0000');
     return sb.toString();

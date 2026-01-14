@@ -63,12 +63,11 @@ public void broadcast(Frame request, Connections<String> connections){
     ConcurrentLinkedQueue<Subscription> subscriptions = channelMap.get(topic);
     if(subscriptions != null){
         for(Subscription sub : subscriptions){
-            String returnMessage = "MESSAGE\n" + 
-                                   "subscription:" + sub.getSubscriptionId() + "\n" +
-                                   "message-id:" + globalMessageCounter.incrementAndGet() + "\n" +
-                                   "destination:" + sub.getTopic() + "\n\n" +
-                                   request.getBody() + "\u0000";
-            connections.send(sub.getConnectionId(), returnMessage);
+            Frame response = new Frame("MESSAGE");
+            response.addHeader("subscription", sub.getSubscriptionId());
+            response.addHeader("message-id", globalMessageCounter.incrementAndGet() + "");
+            response.addHeader("destination", sub.getTopic());
+            connections.send(sub.getConnectionId(), response.toString());
         }
     }
 }
