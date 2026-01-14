@@ -21,7 +21,6 @@ private:
     map<int, string> receiptActions;
     //game -> <user -> events>
     map<string, map<string, vector<Event>>> gameEvents;
-    bool shouldTerminate;
     bool isLoggedIn;
 
 public:

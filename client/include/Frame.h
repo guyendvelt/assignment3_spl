@@ -25,16 +25,5 @@ public:
     void setBody(const string& body);
     string toString();
     static Frame parse(const string& msg);
-    
 
-
-
-
-
-
-
-
-
-
-
-}
+};

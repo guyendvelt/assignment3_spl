@@ -4,7 +4,7 @@
 #include <fstream>
 #include <sstream>
 #include <algorithm>
-#include "../include/Frame.h";
+#include "../include/Frame.h"
 
 using namespace std;
 
@@ -15,7 +15,6 @@ receiptIdCounter(0),
 activeSubscriptions(),
 receiptActions(),
 gameEvents(),
-shouldTerminate(false),
 isLoggedIn(false){}
 
 bool StompProtocol::processServerResponse(string response){
@@ -42,7 +41,6 @@ bool StompProtocol::processServerResponse(string response){
         string body = frame.getBody();
         cout << "ERROR message: " << msg << "\n" << "ERROR description: " << body << endl;
         isLoggedIn = false;
-        shouldTerminate = true;
         return false;
     } else {
         cout << "Warning: Received unknown command: " << command << endl;
@@ -80,9 +78,10 @@ string StompProtocol::processInput(string commandLine) {
 
     }else if(command == "login"){
        cout << "client already logged in" << endl;
+       return "";
 
     }else if(command == "logout"){
-        handleLogout();
+        return handleLogout();
 
     }else {
         cout << "Illegal command" << endl;
@@ -140,18 +139,18 @@ string StompProtocol::handleReport(string filePath){
                       "event name: " + event.get_name() + "\n" +
                       "time: " + to_string(event.get_time()) + "\n" +
                       "general game updates:\n";
-        for (auto const& [key, val] : event.get_game_updates()){
-            body += key + ":" + val + "\n";
+        for (const auto& pair : event.get_game_updates()){
+            body += pair.first + ":" + pair.second + "\n";
         }
 
         body += "team a updates:\n";
-        for (auto const& [key, val] : event.get_team_a_updates()) {
-            body += key + ":" + val + "\n";
+        for (const auto& pair : event.get_team_a_updates()) {
+            body += pair.first + ":" + pair.second + "\n";
         }
         
         body += "team b updates:\n";
-        for (auto const& [key, val] : event.get_team_b_updates()) {
-            body += key + ":" + val + "\n";
+        for (const auto& pair : event.get_team_b_updates()) {
+            body += pair.first + ":" + pair.second + "\n";
         }
 
         body += "description:\n" + event.get_discription() + "\n";
@@ -185,31 +184,31 @@ void StompProtocol::handleSummary(string gameName, string userName, string fileP
     map<string,string> team_a_stats;
     map<string,string> team_b_stats;
     //update the statistics
-    for(auto& const event : events){
-        for (auto const& [key, val] : event.get_game_updates()) {
-            generalStats[key] = val;
+    for(const auto& event : events){
+        for (const auto& pair : event.get_game_updates()) {
+            generalStats[pair.first] = pair.second;
         }
-        for (auto const& [key, val] : event.get_team_a_updates()) {
-            team_a_stats[key] = val;
+        for (const auto& pair : event.get_team_a_updates()) {
+            team_a_stats[pair.first] = pair.second;
         }
-        for (auto const& [key, val] : event.get_team_b_updates()) {
-            team_b_stats[key] = val;
+        for (const auto& pair : event.get_team_b_updates()) {
+            team_b_stats[pair.first] = pair.second;
         }
     }
 
     outFile << team_a_name << " vs " << team_b_name << "\n";
     outFile << "Game stats:\n";
     outFile << "General stats:\n";
-    for(auto& const [key, val] : generalStats){
-        outFile << key << ": " << val + "\n";
+    for(const auto& pair : generalStats){
+        outFile << pair.first << ": " << pair.second + "\n";
     }
     outFile << team_a_name << " stats:\n";
-    for(auto& const [key, val] : team_a_stats){
-        outFile << key << ": " << val + "\n";
+    for(const auto& pair : team_a_stats){
+        outFile << pair.first << ": " << pair.second + "\n";
     }
     outFile << team_b_name << " stats:\n";
-    for(auto& const [key, val] : generalStats){
-        outFile << key << ": " << val + "\n";
+    for(const auto& pair : team_b_stats){
+        outFile << pair.first << ": " << pair.second + "\n";
     }
     
     outFile << "Game event reports:\n";
@@ -227,7 +226,7 @@ void StompProtocol::handleSummary(string gameName, string userName, string fileP
         receiptIdCounter++;
         receiptActions[receiptIdCounter] = "Disconnecting...";
         Frame response("DISCONNECT");
-        response.addHeader("receipt", to_string(receiptIdCounter);
+        response.addHeader("receipt", to_string(receiptIdCounter));
         return response.toString();
     }
 
@@ -239,6 +238,7 @@ void StompProtocol::handleSummary(string gameName, string userName, string fileP
                 return line.substr(6);
             }
         }
+        return "";
     }
 
 

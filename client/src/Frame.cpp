@@ -39,7 +39,6 @@ string Frame::toString(){
     if(!body.empty()){
         stringFrame << body;
     }
-    // stringFrame << "\0";
     return stringFrame.str();
 }
 
@@ -53,7 +52,7 @@ Frame Frame::parse(const string& msg){
     Frame frame(command);
     //parse headers
     while(getline(msgStream,line) && !line.empty()){
-        int colon = line.find(":");
+        size_t colon = line.find(":");
         if(colon != string::npos){
             string key = line.substr(0, colon);
             string val = line.substr(colon+1);
