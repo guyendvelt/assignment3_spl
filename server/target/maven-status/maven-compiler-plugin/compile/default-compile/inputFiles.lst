@@ -21,7 +21,6 @@
 /workspaces/assignment3_spl/server/src/main/java/bgu/spl/net/impl/echo/EchoServer.java
 /workspaces/assignment3_spl/server/src/main/java/bgu/spl/net/impl/newsfeed/NewsFeed.java
 /workspaces/assignment3_spl/server/src/main/java/bgu/spl/net/impl/newsfeed/PublishNewsCommand.java
-/workspaces/assignment3_spl/server/src/main/java/bgu/spl/net/srv/TPCServer.java
 /workspaces/assignment3_spl/server/src/main/java/bgu/spl/net/impl/rci/RCIClient.java
 /workspaces/assignment3_spl/server/src/main/java/bgu/spl/net/impl/stomp/SubscriptionManager.java
 /workspaces/assignment3_spl/server/src/main/java/bgu/spl/net/impl/data/User.java

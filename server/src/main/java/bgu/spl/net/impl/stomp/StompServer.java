@@ -2,7 +2,6 @@ package bgu.spl.net.impl.stomp;
 
 import bgu.spl.net.srv.Reactor;
 import bgu.spl.net.srv.Server;
-import bgu.spl.net.srv.TPCServer;
 
 public class StompServer {
 
@@ -17,14 +16,14 @@ public class StompServer {
         Server<String> server;
 
         if(serverType.equals("tpc")){
-            server = new TPCServer<>(port, 
+            server = Server.threadPerClient(port, 
                 () -> new StompMessagingProtocolImpl(), 
                 () -> new StompEncDec()
                 );
             server.serve();
         } else if(serverType.equals("reactor")){
            final int NUM_THREADS = 100;
-           server =  new Reactor<>(NUM_THREADS,
+           server =  Server.reactor(NUM_THREADS,
              port,
               () -> new StompMessagingProtocolImpl(),
                () -> new StompEncDec());

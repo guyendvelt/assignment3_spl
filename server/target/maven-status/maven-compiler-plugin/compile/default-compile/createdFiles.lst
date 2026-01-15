@@ -25,7 +25,6 @@ bgu/spl/net/impl/data/LoginStatus.class
 bgu/spl/net/impl/stomp/StompMessagingProtocolImpl$1.class
 bgu/spl/net/impl/stomp/Frame.class
 bgu/spl/net/impl/stomp/StompMessagingProtocolImpl.class
-bgu/spl/net/srv/TPCServer.class
 bgu/spl/net/impl/stomp/SubscriptionManager.class
 bgu/spl/net/impl/data/Database$1.class
 bgu/spl/net/impl/data/User.class

@@ -27,7 +27,6 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<String
                     case "SEND":
                         handleSend(request);
                         break;
-                        
                     case "CONNECT":
                         handleConnect(request);
                         break;
@@ -78,7 +77,6 @@ private void handleConnect(Frame request) {
        
     } else {
             LoginStatus status = Database.getInstance().login(connectionId, login, passcode);
-           
             switch (status) {
                 case WRONG_PASSWORD:
                     sendError("Login failed", "wrong password", request);
@@ -94,7 +92,9 @@ private void handleConnect(Frame request) {
                     username = login;
                     Frame response = new Frame("CONNECTED");
                     response.addHeader("version", "1.2");
+                    System.out.println("connecting to user " + username);
                     connections.send(connectionId, response.toString());
+                    
                     break;
             }
 
@@ -116,9 +116,9 @@ private void handleConnect(Frame request) {
     }
 
     private void handleUnSubscribe(Frame request){
-        String subId = request.getHeader("subscription");
+        String subId = request.getHeader("id");
         if(subId != null) {
-            SubscriptionManager.getInstance().unsubscribe(request.getHeader("subscription"), connectionId);
+            SubscriptionManager.getInstance().unsubscribe(request.getHeader("id"), connectionId);
             handleReceipt(request);
         } else {
             sendError("UNSUBSCRIBE ERROR", "subID should not be null", request);
