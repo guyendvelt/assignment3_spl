@@ -33,67 +33,66 @@ def recv_null_terminated(sock: socket.socket) -> str:
 
 
 def print_server_report():
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    
     print("\n--- SERVER REPORT ---")
-    
-    # 1. Registered Users
-    print("1. Registered Users:")
-    cursor.execute("SELECT username FROM Users")
-    for row in cursor.fetchall():
-        print(f"   - {row[0]}")
-        
-    # 2. Login History
-    print("\n2. Login History:")
-    cursor.execute("SELECT username, login_time, logout_time FROM Logins")
-    for row in cursor.fetchall():
-        logout = row[2] if row[2] else "Active"
-        print(f"   - User: {row[0]}, Login: {row[1]}, Logout: {logout}")
+    try:
+        with sqlite3.connect(DB_FILE) as conn:
+            cursor = conn.cursor()
+            print("1. Registered Users:")
+            cursor.execute("SELECT username FROM Users")
+            expected_output = cursor.fetchall()
+            if not expected_output:
+                print("(None)")
+            for row in expected_output:
+                print(f"   - {row[0]}")
 
-    # 3. Uploaded Files
-    print("\n3. Uploaded Files:")
-    cursor.execute("SELECT username, filename FROM Files")
-    for row in cursor.fetchall():
-        print(f"   - User: {row[0]}, File: {row[1]}")
+            print("\n2. Login History:")
+            cursor.execute("SELECT username, login_time, logout_time FROM Logins")
+            expected_output = cursor.fetchall()
+            if not expected_output:
+                print(" (None)")
+            for row in expected_output:
+                logout = row[2] if row[2] else "Active"
+                print(f"   - User: {row[0]}, Login: {row[1]}, Logout: {logout}")
+
+            print("\n3. Uploaded Files:")
+            cursor.execute("SELECT username, filename FROM Files")
+            expected_output = cursor.fetchall()
+            if not expected_output:
+                print(" (None)")
+            for row in expected_output:
+                print(f"   - User: {row[0]}, File: {row[1]}")
+    except sqlite3.Error as e:
+        print(f"Error printing report: {e}")
         
     print("---------------------\n")
-    conn.close()
-
 
 def init_database():
     print(f'{SERVER_NAME} Initializing database...')
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    #Create Users Table
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS Users (
-            username TEXT PRIMARY KEY,
-            password TEXT NOT NULL
-        )
-        """)
-        #Create Logins Table 
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS Logins (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT NOT NULL,
-            login_time TEXT NOT NULL,
-            logout_time TEXT,
-            FOREIGN KEY(username) REFERENCES Users(username)
-        )
-    """)
-    #Create Files Tables
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS Files (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT NOT NULL,
-            filename TEXT NOT NULL,
-            upload_time TEXT,
-            FOREIGN KEY(username) REFERENCES Users(username)
-        )
-    """)
-    conn.commit()
-    conn.close()
+    #Create Users Table, Logins Table, Files Table
+    with sqlite3.connect(DB_FILE) as conn:
+
+        conn.executescript("""
+            CREATE TABLE IF NOT EXISTS Users (
+                username TEXT PRIMARY KEY,
+                password TEXT NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS Logins (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT NOT NULL,
+                login_time TEXT NOT NULL,
+                logout_time TEXT,
+                FOREIGN KEY(username) REFERENCES Users(username)
+            );
+            CREATE TABLE IF NOT EXISTS Files (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT NOT NULL,
+                filename TEXT NOT NULL,
+                upload_time TEXT,
+                FOREIGN KEY(username) REFERENCES Users(username)
+            );
+            
+                """)
+
     print("Database initialized successfuly")
 
 
@@ -101,30 +100,29 @@ def init_database():
 def execute_sql_command(sql_command: str) -> str:
     try:
         with sqlite3.connect(DB_FILE) as conn:
-            cursor = conn.cursor();
-            cursor.execute(sql_command)
+            conn.execute(sql_command)
             conn.commit()
         return "done"
     except sqlite3.Error as e:
-        return f'SQL ERROR: {e}' 
-
-        
-
+        return f"SQL ERROR:{e}"
+    
 
 def execute_sql_query(sql_query: str) -> str:
-   try:
+    try:
         with sqlite3.connect(DB_FILE) as conn:
-            cursor = conn.cursor()
-            cursor.execute(sql_query)
-            rows = cursor.fetchall()
-            if not rows:
+            query_data = conn.cursor()
+            query_data.execute(sql_query)
+            expected_output = query_data.fetchall()
+            if not expected_output:
                 return ""
             response_lines = []
-            for row in rows:
+            for row in expected_output:
+                #add row's data with spaces
                 response_lines.append(" ".join(str(item) for item in row))
             return "|".join(response_lines)
-   except sqlite3.Error as e:
-    return f'SQL ERROR: {e}'
+    except sqlite3.Error as e:
+        return f"SQL ERROR:{e}"
+   
 
 
 
