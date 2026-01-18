@@ -67,6 +67,7 @@ public void broadcast(Frame request, Connections<String> connections){
             response.addHeader("subscription", sub.getSubscriptionId());
             response.addHeader("message-id", globalMessageCounter.incrementAndGet() + "");
             response.addHeader("destination", sub.getTopic());
+            response.setBody(request.getBody());
             connections.send(sub.getConnectionId(), response.toString());
         }
     }

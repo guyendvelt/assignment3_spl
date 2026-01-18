@@ -13,17 +13,34 @@ using namespace std;
 	thread* listenerThread = nullptr;
 	bool isLoggedIn = false;
 
+void clean() {
+    if (listenerThread != nullptr) {
+        if (listenerThread->joinable()) {
+            listenerThread->join();
+        }
+        delete listenerThread;
+        listenerThread = nullptr;
+    }
+    if (connectionHandler != nullptr) {
+        delete connectionHandler;
+        connectionHandler = nullptr;
+    }
+    if (protocol != nullptr) {
+        delete protocol;
+        protocol = nullptr;
+    }
+}
+
+
 void socketListener(){
 	while(isLoggedIn){
 		string answer;
 		if(!connectionHandler->getFrameAscii(answer, '\0')){
-			cout << "[DEBUG] Disconnected: ConnectionHandler returned false (Socket closed?)" << endl;
 			cout << "Disconnected. Exiting...\n" << endl;
 			isLoggedIn = false;
 		} else {
 			bool shouldKeepRunning = protocol->processServerResponse(answer);
 			if(!shouldKeepRunning){
-				cout << "[DEBUG] Disconnected: Protocol decided to stop (Logout/Error)" << endl;
 				isLoggedIn = false;
 				connectionHandler->close();
 			}
@@ -34,6 +51,7 @@ void socketListener(){
 
 int main(int argc, char *argv[]) {
 	// TODO: implement the STOMP client
+	std::cout << "Client started" << std::endl;
 	while(true){
 		const short bufsize = 1024;
 		char buf[bufsize];
@@ -53,7 +71,7 @@ int main(int argc, char *argv[]) {
 		}
 		command = args[0];
 		if(command == "login"){
-			if(connectionHandler != nullptr){
+			if(isLoggedIn){
 				cout << "User is already logged in" << endl;
 				continue;
 			}
@@ -74,8 +92,7 @@ int main(int argc, char *argv[]) {
 			connectionHandler = new ConnectionHandler(host,port);
 			if(!connectionHandler->connect()){
 				cout << "could not connect to server" << host << ":" << port << endl;
-				delete connectionHandler;
-				connectionHandler = nullptr;
+				clean();
 				continue;
 			}
 			protocol = new StompProtocol();
@@ -87,16 +104,39 @@ int main(int argc, char *argv[]) {
 			connectFrame.addHeader("passcode", password);
 			if (!connectionHandler->sendFrameAscii(connectFrame.toString(), '\0')){ 
                 cerr << "Failed to send CONNECT frame" << endl;
-				delete connectionHandler;
-				delete protocol;
-				connectionHandler = nullptr;
-				protocol = nullptr;
+				clean();
 				continue;
             }
-			isLoggedIn = true;
-			listenerThread = new thread(socketListener);
+			string answer;
+			if(!connectionHandler->getFrameAscii(answer, '\0')){
+				cout << "could not hear from server!" << endl;
+				clean();
+				continue;
+			}
+			Frame response = Frame::parse(answer);
+            
+			if(response.getCommand() == "CONNECTED"){
+				cout << "Login successful" << endl;
+				isLoggedIn = true;
+				listenerThread = new thread(socketListener);
+			} else {
+				cout << "Login failed: " << response.getBody() << endl; 
+				clean();
+			}	
+			
 		}
 		else {
+			if(command == "logout"){
+				string frame = protocol->processInput(line);
+				if(!frame.empty()){
+				if(!connectionHandler->sendFrameAscii(frame, '\0')){
+					cout << "Error sending frame to server." << endl;
+				}
+			}
+				cout << "logging out..." << endl;
+				clean();
+				break;
+			}
 			if(!isLoggedIn){
 				cout << "please login first" << endl;
 				continue;
@@ -112,20 +152,6 @@ int main(int argc, char *argv[]) {
 		}
 		
 	}
-	if(!isLoggedIn && listenerThread != nullptr){
-			if(listenerThread->joinable()){
-				listenerThread->join();
-			}
-			delete listenerThread;
-			listenerThread = nullptr;
-		}
-		if(connectionHandler!=nullptr){
-			delete connectionHandler;
-			connectionHandler = nullptr;
-		}
-		if(protocol != nullptr){
-			delete protocol;
-			protocol = nullptr;
-		}
+	clean();	
 	return 0;
 }

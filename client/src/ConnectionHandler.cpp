@@ -9,7 +9,7 @@ using std::endl;
 using std::string;
 
 ConnectionHandler::ConnectionHandler(string host, short port) : host_(host), port_(port), io_service_(),
-                                                                socket_(io_service_) {}
+                                                                socket_(io_service_), shouldTerminate(false) {}
 
 ConnectionHandler::~ConnectionHandler() {
 	close();
@@ -42,7 +42,10 @@ bool ConnectionHandler::getBytes(char bytes[], unsigned int bytesToRead) {
 		if (error)
 			throw boost::system::system_error(error);
 	} catch (std::exception &e) {
-		std::cerr << "recv failed (Error: " << e.what() << ')' << std::endl;
+		if(!shouldTerminate){
+			std::cerr << "recv failed (Error: " << e.what() << ')' << std::endl;
+		}
+		
 		return false;
 	}
 	return true;
@@ -58,7 +61,10 @@ bool ConnectionHandler::sendBytes(const char bytes[], int bytesToWrite) {
 		if (error)
 			throw boost::system::system_error(error);
 	} catch (std::exception &e) {
-		std::cerr << "recv failed (Error: " << e.what() << ')' << std::endl;
+		if(!shouldTerminate){
+			std::cerr << "recv failed (Error: " << e.what() << ')' << std::endl;
+		}
+		
 		return false;
 	}
 	return true;
@@ -100,6 +106,7 @@ bool ConnectionHandler::sendFrameAscii(const std::string &frame, char delimiter)
 
 // Close down the connection properly.
 void ConnectionHandler::close() {
+	shouldTerminate = true;
 	try {
 		socket_.close();
 	} catch (...) {

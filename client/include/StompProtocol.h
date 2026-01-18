@@ -41,4 +41,5 @@ private:
     void handleSummary(string gameName, string user, string filePath);
     void parseFrame(string& frame, map<string, string> headers, string& body);
     string getUserName(const string& body);
+    std::string formatMap(const std::map<std::string, std::string>& updates);
     };

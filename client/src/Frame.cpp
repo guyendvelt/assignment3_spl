@@ -59,6 +59,9 @@ Frame Frame::parse(const string& msg){
         if(!line.empty() && line.back() == '\r'){
             line.pop_back();
         }
+        if(line.empty()){ 
+            break; 
+        }
         size_t colon = line.find(":");
         if(colon != string::npos){
             string key = line.substr(0, colon);

@@ -47,6 +47,7 @@ public static Frame parse(String msg){
     i++;
     while(i<lines.length){
         buildBody.append(lines[i]);
+        buildBody.append("\n");
         i++;
     }
     frame.setBody(buildBody.toString());

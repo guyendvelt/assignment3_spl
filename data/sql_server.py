@@ -11,6 +11,9 @@ the methods below.
 import socket
 import sys
 import threading
+import sqlite3
+import socket
+import os
 
 
 SERVER_NAME = "STOMP_PYTHON_SQL_SERVER"  # DO NOT CHANGE!
@@ -29,16 +32,100 @@ def recv_null_terminated(sock: socket.socket) -> str:
             return msg.decode("utf-8", errors="replace")
 
 
+def print_server_report():
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    
+    print("\n--- SERVER REPORT ---")
+    
+    # 1. Registered Users
+    print("1. Registered Users:")
+    cursor.execute("SELECT username FROM Users")
+    for row in cursor.fetchall():
+        print(f"   - {row[0]}")
+        
+    # 2. Login History
+    print("\n2. Login History:")
+    cursor.execute("SELECT username, login_time, logout_time FROM Logins")
+    for row in cursor.fetchall():
+        logout = row[2] if row[2] else "Active"
+        print(f"   - User: {row[0]}, Login: {row[1]}, Logout: {logout}")
+
+    # 3. Uploaded Files
+    print("\n3. Uploaded Files:")
+    cursor.execute("SELECT username, filename FROM Files")
+    for row in cursor.fetchall():
+        print(f"   - User: {row[0]}, File: {row[1]}")
+        
+    print("---------------------\n")
+    conn.close()
+
+
 def init_database():
-    pass
+    print(f'{SERVER_NAME} Initializing database...')
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    #Create Users Table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS Users (
+            username TEXT PRIMARY KEY,
+            password TEXT NOT NULL
+        )
+        """)
+        #Create Logins Table 
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS Logins (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT NOT NULL,
+            login_time TEXT NOT NULL,
+            logout_time TEXT,
+            FOREIGN KEY(username) REFERENCES Users(username)
+        )
+    """)
+    #Create Files Tables
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS Files (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT NOT NULL,
+            filename TEXT NOT NULL,
+            upload_time TEXT,
+            FOREIGN KEY(username) REFERENCES Users(username)
+        )
+    """)
+    conn.commit()
+    conn.close()
+    print("Database initialized successfuly")
+
 
 
 def execute_sql_command(sql_command: str) -> str:
-    return "done"
+    try:
+        with sqlite3.connect(DB_FILE) as conn:
+            cursor = conn.cursor();
+            cursor.execute(sql_command)
+            conn.commit()
+        return "done"
+    except sqlite3.Error as e:
+        return f'SQL ERROR: {e}' 
+
+        
 
 
 def execute_sql_query(sql_query: str) -> str:
-    return "done"
+   try:
+        with sqlite3.connect(DB_FILE) as conn:
+            cursor = conn.cursor()
+            cursor.execute(sql_query)
+            rows = cursor.fetchall()
+            if not rows:
+                return ""
+            response_lines = []
+            for row in rows:
+                response_lines.append(" ".join(str(item) for item in row))
+            return "|".join(response_lines)
+   except sqlite3.Error as e:
+    return f'SQL ERROR: {e}'
+
 
 
 def handle_client(client_socket: socket.socket, addr):
@@ -52,9 +139,16 @@ def handle_client(client_socket: socket.socket, addr):
 
             print(f"[{SERVER_NAME}] Received:")
             print(message)
-
-            client_socket.sendall(b"done\0")
-
+            response  = ""
+            clean_msg = message.strip().upper()
+            if clean_msg == "REPORT":
+                print_server_report()
+                response = "Report printed on server console"
+            elif clean_msg.startswith("SELECT"):
+                response = execute_sql_query(message)
+            else:
+                response = execute_sql_command(message)
+            client_socket.sendall(response.encode('utf-8') +  b"\0")
     except Exception as e:
         print(f"[{SERVER_NAME}] Error handling client {addr}: {e}")
     finally:
@@ -64,8 +158,8 @@ def handle_client(client_socket: socket.socket, addr):
             pass
         print(f"[{SERVER_NAME}] Client {addr} disconnected")
 
-
 def start_server(host="127.0.0.1", port=7778):
+    init_database()
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 

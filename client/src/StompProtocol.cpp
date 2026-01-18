@@ -8,6 +8,15 @@
 
 using namespace std;
 
+static string trim(const string& str) {
+    size_t first = str.find_first_not_of(" \t\r\n");
+    if (string::npos == first) {
+        return "";
+    }
+    size_t last = str.find_last_not_of(" \t\r\n");
+    return str.substr(first, (last - first + 1));
+}
+
 StompProtocol::StompProtocol() :
 username(""),
 subscriptionIdCounter(0),
@@ -129,42 +138,36 @@ string StompProtocol::handleReport(string filePath){
         cout << "Error parsing file" << endl;
         return "";
     }
-    string frames = "";
     string gameName = data.team_a_name + "_" + data.team_b_name;
 
     if (activeSubscriptions.count(gameName) == 0){
         cout << "Error: You must join the channel " << gameName << " before reporting." << endl;
         return "";
     }
+    string frames = "";
 
-    for (const Event& event : data.events){
-        string body = "user: " + username + "\n" +
-                      "team a: " + data.team_a_name + "\n" +
-                      "team b: " + data.team_b_name + "\n" +
-                      "event name: " + event.get_name() + "\n" +
-                      "time: " + to_string(event.get_time()) + "\n" +
-                      "general game updates:\n";
-        for (const auto& pair : event.get_game_updates()){
-            body += pair.first + ":" + pair.second + "\n";
-        }
-
-        body += "team a updates:\n";
-        for (const auto& pair : event.get_team_a_updates()) {
-            body += pair.first + ":" + pair.second + "\n";
-        }
+    for (size_t i = 0; i < data.events.size(); i++){
+        const Event& event = data.events[i]; 
+        stringstream body;
+        body << "user: " << username << " \n"
+           << "team a: " << data.team_a_name << " \n"
+           << "team b: " << data.team_b_name << " \n"
+           << "event name: " << event.get_name() << " \n"
+           << "time: " << event.get_time() << " \n"
+           << "general game updates:\n" << formatMap(event.get_game_updates())
+           << "team a updates: \n"       << formatMap(event.get_team_a_updates())
+           << "team b updates: \n"       << formatMap(event.get_team_b_updates())
+           << "description: \n"          << event.get_discription();
         
-        body += "team b updates:\n";
-        for (const auto& pair : event.get_team_b_updates()) {
-            body += pair.first + ":" + pair.second + "\n";
-        }
 
-        body += "description:\n" + event.get_discription() + "\n";
+       
         Frame response("SEND");
         response.addHeader("destination", gameName);
-        response.setBody(body);
-
+        response.setBody(body.str());
         frames += response.toString();
-        gameEvents[gameName][username].push_back(event);
+        if(i<data.events.size() - 1) {
+            frames += '\0';
+        }
 
     }
         return frames;
@@ -218,7 +221,7 @@ void StompProtocol::handleSummary(string gameName, string userName, string fileP
     
     outFile << "Game event reports:\n";
     for(const Event& event : events){
-        outFile << event.get_time() << " - " << event.get_name() << ":\n\n";
+        outFile << event.get_time() << " " << event.get_name() << ":\n\n";
         outFile  << event.get_discription() << "\n\n";
     }
 
@@ -236,15 +239,28 @@ void StompProtocol::handleSummary(string gameName, string userName, string fileP
     }
 
     string StompProtocol::getUserName(const string& body){
-        stringstream bodyStream(body);
-        string line;
-        if(getline(bodyStream, line)){
-            if(line.find("user:") == 0){
-                return line.substr(6);
-            }
+    stringstream bodyStream(body);
+    string line;
+    if(getline(bodyStream, line)){
+        string prefix = "user:";
+        size_t pos = line.find(prefix);
+        if (pos != string::npos) {
+            string name = line.substr(pos + prefix.length());
+            return trim(name); 
         }
-        return "";
     }
+    return "";
+}
+
+    string StompProtocol::formatMap(const map<string, string>& updates) {
+    string result = "";
+    for (const auto& pair : updates) {
+        result += pair.first + ":" + pair.second + "\n";
+    }
+    return result;
+}
+
+
 
 
 

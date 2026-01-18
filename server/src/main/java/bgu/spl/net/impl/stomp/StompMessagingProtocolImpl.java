@@ -127,6 +127,7 @@ private void handleConnect(Frame request) {
     }
 
     private void handleDisconnect(Frame request){
+        System.out.println("Received DISCONNECTED request from user " + connectionId);
         handleReceipt(request);
         SubscriptionManager.getInstance().clearConnection(connectionId);
         shouldTerminate = true;
