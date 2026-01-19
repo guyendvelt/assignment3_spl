@@ -138,6 +138,7 @@ string StompProtocol::handleReport(string filePath){
         cout << "Error parsing file" << endl;
         return "";
     }
+    vector<Event> sortedEvents = eventsSorting(data.events);
     string gameName = data.team_a_name + "_" + data.team_b_name;
 
     if (activeSubscriptions.count(gameName) == 0){
@@ -146,8 +147,8 @@ string StompProtocol::handleReport(string filePath){
     }
     string frames = "";
 
-    for (size_t i = 0; i < data.events.size(); i++){
-        const Event& event = data.events[i]; 
+    for (size_t i = 0; i < sortedEvents.size(); i++){
+        const Event& event = sortedEvents[i]; 
         stringstream body;
         body << "user: " << username << " \n"
            << "team a: " << data.team_a_name << " \n"
@@ -165,13 +166,12 @@ string StompProtocol::handleReport(string filePath){
         response.addHeader("destination", gameName);
         response.setBody(body.str());
         frames += response.toString();
-        if(i<data.events.size() - 1) {
+        if(i < sortedEvents.size() - 1) {
             frames += '\0';
         }
 
     }
         return frames;
-    
 }
 
 void StompProtocol::handleSummary(string gameName, string userName, string filePath){
@@ -185,7 +185,7 @@ void StompProtocol::handleSummary(string gameName, string userName, string fileP
         return;
     }
     
-    const vector<Event>& events = gameEvents[gameName][userName];
+    vector<Event> events = eventsSorting(gameEvents[gameName][userName]);
     string team_a_name = events[0].get_team_a_name();
     string team_b_name = events[0].get_team_b_name();
     map<string,string> generalStats;
@@ -239,26 +239,60 @@ void StompProtocol::handleSummary(string gameName, string userName, string fileP
     }
 
     string StompProtocol::getUserName(const string& body){
-    stringstream bodyStream(body);
-    string line;
-    if(getline(bodyStream, line)){
-        string prefix = "user:";
-        size_t pos = line.find(prefix);
-        if (pos != string::npos) {
-            string name = line.substr(pos + prefix.length());
-            return trim(name); 
+        stringstream bodyStream(body);
+        string line;
+        if(getline(bodyStream, line)){
+            string prefix = "user:";
+            size_t pos = line.find(prefix);
+            if (pos != string::npos) {
+                string name = line.substr(pos + prefix.length());
+                return trim(name); 
+            }
         }
-    }
-    return "";
+        return "";
 }
 
     string StompProtocol::formatMap(const map<string, string>& updates) {
-    string result = "";
-    for (const auto& pair : updates) {
-        result += pair.first + ":" + pair.second + "\n";
+        string result = "";
+        for (const auto& pair : updates) {
+            result += pair.first + ":" + pair.second + "\n";
+        }
+        return result;
     }
-    return result;
-}
+
+    vector<Event> StompProtocol::eventsSorting(vector<Event> events){
+        vector<Event> sortedEvents;
+        sortedEvents.reserve(events.size());
+        vector<Event> before_halftime;
+        vector<Event> after_halftime;
+        for (const auto& event : events){
+            bool is_before = true;
+            if (event.get_game_updates().count("before halftime") == 1){
+                if (event.get_game_updates().at("before halftime") == "false"){
+                    is_before = false;
+                }
+            }
+            if (is_before || event.get_time() <= 3060){
+                before_halftime.push_back(event);
+            } else {
+                after_halftime.push_back(event);
+            }
+        }
+
+        auto timeComparator = [](const Event& a, const Event& b){
+            return a.get_time() < b.get_time();
+        };
+
+        sort(before_halftime.begin(), before_halftime.end(), timeComparator);
+        sort(after_halftime.begin(), after_halftime.end(), timeComparator);
+        sortedEvents.insert(sortedEvents.end(), before_halftime.begin(), before_halftime.end());
+        sortedEvents.insert(sortedEvents.end(), after_halftime.begin(), after_halftime.end());
+        return sortedEvents;
+    }
+
+
+
+
 
 
 
