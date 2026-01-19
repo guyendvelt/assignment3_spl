@@ -88,6 +88,10 @@ public void clearConnection(int connectionId){
 
 }
 
+public boolean isRegistered(int connectionId){
+    return clientMap.containsKey(connectionId);
+}
+
 
 
 

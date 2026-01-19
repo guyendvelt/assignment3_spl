@@ -1,5 +1,8 @@
 package bgu.spl.net.impl.stomp;
 import java.util.Map;
+
+import javax.xml.crypto.Data;
+
 import bgu.spl.net.api.StompMessagingProtocol;
 import bgu.spl.net.impl.data.Database;
 import bgu.spl.net.impl.data.LoginStatus;
@@ -56,8 +59,14 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<String
     private void handleSend(Frame request){
         String topic = request.getHeader("destination");
         if(topic != null){
-            SubscriptionManager.getInstance().broadcast(request, connections);
-            handleReceipt(request);  
+            boolean isRegistered = SubscriptionManager.getInstance().isRegistered(this.connectionId);
+            if(!isRegistered){
+                sendError("NOT SUBSCRIBED","You must be subsribed to " + topic + " to send messages", request);
+            } else {
+                 SubscriptionManager.getInstance().broadcast(request, connections);
+                 handleReceipt(request);
+            }
+             
         } else {
             sendError("TOPIC ERROR","topic should not be null", request);
         }
@@ -127,11 +136,12 @@ private void handleConnect(Frame request) {
     }
 
     private void handleDisconnect(Frame request){
-        System.out.println("Received DISCONNECTED request from user " + connectionId);
+        System.out.println("Received DISCONNECTED request from user " + username);
         handleReceipt(request);
         SubscriptionManager.getInstance().clearConnection(connectionId);
         shouldTerminate = true;
         connections.disconnect(connectionId);
+        Database.getInstance().logout(connectionId);
     }
 
 

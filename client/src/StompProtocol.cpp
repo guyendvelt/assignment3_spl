@@ -141,10 +141,7 @@ string StompProtocol::handleReport(string filePath){
     vector<Event> sortedEvents = eventsSorting(data.events);
     string gameName = data.team_a_name + "_" + data.team_b_name;
 
-    if (activeSubscriptions.count(gameName) == 0){
-        cout << "Error: You must join the channel " << gameName << " before reporting." << endl;
-        return "";
-    }
+    
     string frames = "";
 
     for (size_t i = 0; i < sortedEvents.size(); i++){

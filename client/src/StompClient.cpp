@@ -133,7 +133,7 @@ int main(int argc, char *argv[]) {
 					cout << "Error sending frame to server." << endl;
 				}
 			}
-				cout << "logging out..." << endl;
+				
 				clean();
 				break;
 			}

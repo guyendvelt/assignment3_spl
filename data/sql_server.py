@@ -8,7 +8,6 @@ Students should EXTEND this server by implementing
 the methods below.
 """
 
-import socket
 import sys
 import threading
 import sqlite3
