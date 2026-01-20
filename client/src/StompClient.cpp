@@ -125,6 +125,7 @@ int main(int argc, char *argv[]) {
 			} else {
 				cout << "Login failed: " << response.getBody() << endl; 
 				clean();
+				shouldTerminate = true;;
 			}	
 			
 		}
