@@ -161,6 +161,9 @@ string StompProtocol::handleReport(string filePath){
        
         Frame response("SEND");
         response.addHeader("destination", gameName);
+        if(i==0){
+            response.addHeader("filePath", filePath);
+        }
         response.setBody(body.str());
         frames += response.toString();
         if(i < sortedEvents.size() - 1) {

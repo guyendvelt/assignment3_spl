@@ -12,6 +12,7 @@ using namespace std;
 	StompProtocol* protocol = nullptr;;
 	thread* listenerThread = nullptr;
 	bool isLoggedIn = false;
+	bool shouldTerminate = false;
 
 void clean() {
     if (listenerThread != nullptr) {
@@ -38,11 +39,13 @@ void socketListener(){
 		if(!connectionHandler->getFrameAscii(answer, '\0')){
 			cout << "Disconnected. Exiting...\n" << endl;
 			isLoggedIn = false;
+			shouldTerminate = true;
 		} else {
 			bool shouldKeepRunning = protocol->processServerResponse(answer);
 			if(!shouldKeepRunning){
 				isLoggedIn = false;
 				connectionHandler->close();
+				shouldTerminate = true;
 			}
 		}
 
@@ -52,7 +55,7 @@ void socketListener(){
 int main(int argc, char *argv[]) {
 	// TODO: implement the STOMP client
 	std::cout << "Client started" << std::endl;
-	while(true){
+	while(!shouldTerminate){
 		const short bufsize = 1024;
 		char buf[bufsize];
 		cin.getline(buf, bufsize);

@@ -67,22 +67,22 @@ def print_server_report():
 
 def init_database():
     print(f'{SERVER_NAME} Initializing database...')
-    #Create Users Table, Logins Table, Files Table
+    #Create users Table, login_history Table, files_tracking Table
     with sqlite3.connect(DB_FILE) as conn:
 
         conn.executescript("""
-            CREATE TABLE IF NOT EXISTS Users (
+            CREATE TABLE IF NOT EXISTS users (
                 username TEXT PRIMARY KEY,
                 password TEXT NOT NULL
             );
-            CREATE TABLE IF NOT EXISTS Logins (
+            CREATE TABLE IF NOT EXISTS login_history (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 username TEXT NOT NULL,
                 login_time TEXT NOT NULL,
                 logout_time TEXT,
                 FOREIGN KEY(username) REFERENCES Users(username)
             );
-            CREATE TABLE IF NOT EXISTS Files (
+            CREATE TABLE IF NOT EXISTS files_tracking (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 username TEXT NOT NULL,
                 filename TEXT NOT NULL,

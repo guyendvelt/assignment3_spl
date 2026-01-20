@@ -58,6 +58,11 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<String
 
     private void handleSend(Frame request){
         String topic = request.getHeader("destination");
+        if(request.getHeader("filePath") != null){
+            String filePath = request.getHeader("filePath");
+            Database.getInstance().trackFileUpload(username, filePath, topic);
+        }
+        
         if(topic != null){
             boolean isRegistered = SubscriptionManager.getInstance().isRegistered(this.connectionId);
             if(!isRegistered){
@@ -161,6 +166,7 @@ private void handleConnect(Frame request) {
         SubscriptionManager.getInstance().clearConnection(connectionId);
         shouldTerminate = true;
         connections.disconnect(connectionId);
+        Database.getInstance().logout(connectionId);
     }
 
     private void handleReceipt(Frame request) {
