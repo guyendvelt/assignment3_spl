@@ -24,7 +24,8 @@ receiptIdCounter(0),
 activeSubscriptions(),
 receiptActions(),
 gameEvents(),
-isLoggedIn(false){}
+isLoggedIn(false),
+mtx(){}
 
 bool StompProtocol::processServerResponse(string response){
     Frame frame = Frame::parse(response);
@@ -38,11 +39,24 @@ bool StompProtocol::processServerResponse(string response){
         string body = frame.getBody();
         Event event(body);
         string userName = getUserName(body);
-        gameEvents[gameName][userName].push_back(event);
+        {
+            lock_guard<mutex> lock(mtx);
+            gameEvents[gameName][userName].push_back(event);
+        }
         cout << "Received message from " << frame.getHeader("destination") << ":\n" << body << endl;
         return true;
     } else if(command == "RECEIPT"){
-        string receiptAction = receiptActions.at(stoi(frame.getHeader("receipt-id")));
+        string receiptAction;
+        {
+            lock_guard<mutex> lock(mtx); //protect receiptAction
+            int receiptId = stoi(frame.getHeader("receipt-id"));
+            if (receiptActions.count(receiptId)) {
+                receiptAction = receiptActions.at(receiptId);
+            } else {
+                receiptAction = "Unknown receipt id: " + to_string(receiptId);
+            }
+
+        }
         cout << receiptAction << endl;
         return true;
     } else if(command == "ERROR"){
@@ -99,6 +113,7 @@ string StompProtocol::processInput(string commandLine) {
 }
 
 string StompProtocol::handleJoin(string gameName){
+    lock_guard<mutex> lock(mtx); //protect activeSubscriptions and receiptActions
     if (activeSubscriptions.count(gameName) > 0) {
             cout << "You are already subscribed to " << gameName << endl;
             return "";
@@ -116,6 +131,7 @@ string StompProtocol::handleJoin(string gameName){
 }
 
 string StompProtocol::handleExit(string gameName){
+    lock_guard<mutex> lock(mtx); //protect activeSubscriptions and receiptActions
 if (activeSubscriptions.count(gameName) == 0){
     cout << "You are not subscribed to " << gameName << endl;
     return "";
@@ -175,8 +191,17 @@ string StompProtocol::handleReport(string filePath){
 }
 
 void StompProtocol::handleSummary(string gameName, string userName, string filePath){
-    if(gameEvents.count(gameName) == 0 || gameEvents[gameName].count(userName) == 0){
-        cout << "No events found for user " << userName << " in game " << gameName << endl;
+    vector<Event> events;
+    {
+        lock_guard<mutex> lock(mtx); //protect gameEvents
+        if(gameEvents.count(gameName) == 0 || gameEvents[gameName].count(userName) == 0){
+                cout << "No events found for user " << userName << " in game " << gameName << endl;
+                return;
+        }
+        events = gameEvents[gameName][username];
+    }
+    if (events.empty()) {
+        cout << "No events recorded for user " << username << endl;
         return;
     }
     std::ofstream outFile(filePath);
@@ -185,7 +210,7 @@ void StompProtocol::handleSummary(string gameName, string userName, string fileP
         return;
     }
     
-    vector<Event> events = eventsSorting(gameEvents[gameName][userName]);
+    events = eventsSorting(events);
     string team_a_name = events[0].get_team_a_name();
     string team_b_name = events[0].get_team_b_name();
     map<string,string> generalStats;
@@ -227,10 +252,10 @@ void StompProtocol::handleSummary(string gameName, string userName, string fileP
 
     outFile.close();
     cout << "Summary file created at " << filePath << endl;
-
 }
 
     string StompProtocol::handleLogout(){
+        lock_guard<mutex> lock(mtx); //protect receiptActions
         receiptIdCounter++;
         receiptActions[receiptIdCounter] = "Disconnecting...";
         Frame response("DISCONNECT");

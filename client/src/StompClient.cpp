@@ -11,8 +11,8 @@ using namespace std;
 	ConnectionHandler* connectionHandler = nullptr;
 	StompProtocol* protocol = nullptr;;
 	thread* listenerThread = nullptr;
-	bool isLoggedIn = false;
-	bool shouldTerminate = false;
+	atomic_bool isLoggedIn(false);
+	atomic_bool shouldTerminate(false);
 
 void clean() {
     if (listenerThread != nullptr) {

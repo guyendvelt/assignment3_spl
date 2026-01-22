@@ -5,10 +5,12 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <mutex>
 
 using std::string;
 using std::map;
 using std::vector;
+
 
 class StompProtocol
 {
@@ -16,12 +18,15 @@ private:
     string username;
     int subscriptionIdCounter;
     int receiptIdCounter;
-    //
+    // channel -> subscriptions id
     map<string,int> activeSubscriptions;
     map<int, string> receiptActions;
     //game -> <user -> events>
     map<string, map<string, vector<Event>>> gameEvents;
     bool isLoggedIn;
+    std::mutex mtx; 
+
+
 
 public:
     StompProtocol();
