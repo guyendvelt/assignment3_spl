@@ -198,7 +198,7 @@ void StompProtocol::handleSummary(string gameName, string userName, string fileP
                 cout << "No events found for user " << userName << " in game " << gameName << endl;
                 return;
         }
-        events = gameEvents[gameName][username];
+        events = gameEvents[gameName][userName];
     }
     if (events.empty()) {
         cout << "No events recorded for user " << username << endl;
