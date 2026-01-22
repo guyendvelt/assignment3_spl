@@ -88,8 +88,17 @@ public void clearConnection(int connectionId){
 
 }
 
-public boolean isRegistered(int connectionId){
-    return clientMap.containsKey(connectionId);
+public boolean isSubscribed(String topic, int connectionId) {
+    ConcurrentLinkedQueue<Subscription> clientSubscriptions = clientMap.get(connectionId);
+    if (clientSubscriptions == null) {
+        return false;
+    }
+    for (Subscription sub : clientSubscriptions) {
+        if (sub.getTopic().equals(topic)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 

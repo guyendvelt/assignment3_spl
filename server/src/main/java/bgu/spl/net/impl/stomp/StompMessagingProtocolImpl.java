@@ -59,8 +59,8 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<String
     private void handleSend(Frame request){
         String topic = request.getHeader("destination");
         if(topic != null){
-            boolean isRegistered = SubscriptionManager.getInstance().isRegistered(this.connectionId);
-            if(!isRegistered){
+            boolean isSubscribed = SubscriptionManager.getInstance().isSubscribed(topic, this.connectionId);
+            if(!isSubscribed){
                 sendError("NOT SUBSCRIBED","You must be subsribed to " + topic + " to send messages", request);
             } else {
                  SubscriptionManager.getInstance().broadcast(request, connections);
