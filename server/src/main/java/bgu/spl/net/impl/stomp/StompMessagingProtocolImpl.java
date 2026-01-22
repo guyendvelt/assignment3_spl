@@ -58,11 +58,6 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<String
 
     private void handleSend(Frame request){
         String topic = request.getHeader("destination");
-        if(request.getHeader("filePath") != null){
-            String filePath = request.getHeader("filePath");
-            Database.getInstance().trackFileUpload(username, filePath, topic);
-        }
-        
         if(topic != null){
             boolean isRegistered = SubscriptionManager.getInstance().isRegistered(this.connectionId);
             if(!isRegistered){
@@ -70,6 +65,10 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<String
             } else {
                  SubscriptionManager.getInstance().broadcast(request, connections);
                  handleReceipt(request);
+                 if(request.getHeader("filePath") != null){
+                    String filePath = request.getHeader("filePath");
+                    Database.getInstance().trackFileUpload(username, filePath, topic);
+                }
             }
              
         } else {
@@ -132,7 +131,7 @@ private void handleConnect(Frame request) {
     private void handleUnSubscribe(Frame request){
         String subId = request.getHeader("id");
         if(subId != null) {
-            SubscriptionManager.getInstance().unsubscribe(request.getHeader("id"), connectionId);
+            SubscriptionManager.getInstance().unsubscribe(subId, connectionId);
             handleReceipt(request);
         } else {
             sendError("UNSUBSCRIBE ERROR", "subID should not be null", request);

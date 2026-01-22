@@ -73,7 +73,8 @@ def init_database():
         conn.executescript("""
             CREATE TABLE IF NOT EXISTS users (
                 username TEXT PRIMARY KEY,
-                password TEXT NOT NULL
+                password TEXT NOT NULL,
+                registration_date TEXT
             );
             CREATE TABLE IF NOT EXISTS login_history (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -82,11 +83,12 @@ def init_database():
                 logout_time TEXT,
                 FOREIGN KEY(username) REFERENCES Users(username)
             );
-            CREATE TABLE IF NOT EXISTS files_tracking (
+            CREATE TABLE IF NOT EXISTS file_tracking (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 username TEXT NOT NULL,
                 filename TEXT NOT NULL,
                 upload_time TEXT,
+                game_channel TEXT,
                 FOREIGN KEY(username) REFERENCES Users(username)
             );
             
@@ -99,7 +101,8 @@ def init_database():
 def execute_sql_command(sql_command: str) -> str:
     try:
         with sqlite3.connect(DB_FILE) as conn:
-            conn.execute(sql_command)
+            cursor = conn.cursor()
+            cursor.execute(sql_command)
             conn.commit()
         return "done"
     except sqlite3.Error as e:

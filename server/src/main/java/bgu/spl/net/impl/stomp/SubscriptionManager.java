@@ -46,7 +46,7 @@ public void unsubscribe(String subscriptionId, int connectionId){
     ConcurrentLinkedQueue<Subscription> clientSubscriptions = clientMap.get(connectionId);
     if(clientSubscriptions != null){
         Subscription subscriptionToRemove = null;
-        for(Subscription sub : clientMap.get(connectionId)){
+        for(Subscription sub : clientSubscriptions){
             if(sub.getSubscriptionId().equals(subscriptionId)){
                 subscriptionToRemove = sub;
             }

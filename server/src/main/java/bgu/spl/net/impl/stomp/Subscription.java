@@ -1,5 +1,7 @@
 package bgu.spl.net.impl.stomp;
 
+import java.util.Objects;
+
 public class Subscription {
     private final String topic;
     private final int connectionId;
@@ -21,6 +23,20 @@ public class Subscription {
         return subscriptionId;
     }
     
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Subscription that = (Subscription) o;
+        return connectionId == that.connectionId &&
+                Objects.equals(topic, that.topic) &&
+                Objects.equals(subscriptionId, that.subscriptionId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(topic, connectionId, subscriptionId);
+    }
 
 }
 
